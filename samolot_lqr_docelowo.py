@@ -12,7 +12,7 @@ from lqr2 import *
 import icon as i
 
 global K
-
+global cm_b_d_alpha
 global az_turbulence
 global ax_wind
 global az_wind
@@ -41,15 +41,15 @@ def RHS( x , t , u_control):
   deg2rad = pi/180.0
   g = 9.81
 
-  S = 17.44 * c_lin**2  #mig
-  c =  1.658 * c_lin #mig
-  b = 10.2 * c_lin #mig
-  Sh = 2.852  * c_lin**2 #mig
-  ch = 1.4 * c_lin #mig
-  Lh = 4.16 * c_lin #mig
+  S = 19.185 * c_lin**2  
+  c =  1.607 * c_lin 
+  b = 11.85 * c_lin 
+  Sh = 3.59  * c_lin**2 
+  ch = 0.871 * c_lin 
+  Lh = 4.856 * c_lin 
   
-  m  = 3050 * c_mass #mig
-  Iy = 1723.5 * c_mass*(c_lin**2) #moje
+  m  = 2070 * c_mass 
+  Iy = 4500 * c_mass*(c_lin**2) 
 
   vx = x[0] + ax_wind
   vz = x[1] + az_wind
@@ -60,12 +60,12 @@ def RHS( x , t , u_control):
   alpha = atan( vz/vx )
   V = sqrt( vz**2 + vx**2 )
 
-  a = 4.513 #mig
-  alpha_Cz_0 = -3.3*deg2rad #mig
+  a = 4.92#4.513
+  alpha_Cz_0 = -3.3*deg2rad #1.8
   CL = a * ( alpha - alpha_Cz_0 )
 
-  e = 0.8 #mig
-  CD_0 = 0.0489 #mig
+  e = 0.8 
+  CD_0 = 0.0419 #0.023
   CD = CD_0 + CL**2/(pi*lambd*e)
 
   ro_0 = 1.225
@@ -77,23 +77,23 @@ def RHS( x , t , u_control):
   D = Q_dyn * S * CD
   G = m * g
 
-  Power_0_HP = 1350 * c_pow #mig
+  Power_0_HP = 2*220 * c_pow 
   Power = 735.5 * Power_0_HP * ro/ro_0
   Thrust = Power/V * u_control[1]
 
-  cm_ac = -0.094 #mig CmSA
-  cm_w = -0.111 #mig Cmp
-  cm_b_d_alpha = 0.2055 #mig moment pochylajacy samolotu wzgl. krawędzi natarcia
-  cm_wb = cm_w + cm_b_d_alpha*( alpha - alpha_Cz_0 ) #
+  cm_ac = -0.095#-0.05 
+  cm_w = -0.110#-0.065 
+  cm_b_d_alpha = 0.1982#0.547
+  cm_wb = cm_w + cm_b_d_alpha*( alpha - alpha_Cz_0 ) #Cmbu
 
-  alpha_h_0 = -2.0*deg2rad #?
-  d_eps_d_alfa = 0.4816 #mig
-  a_1 = 3.4 #mig
-  a_2 = 2.513 #mig
+  alpha_h_0 = -2.0*deg2rad 
+  d_eps_d_alfa = 0.4815#0.365 
+  a_1 = 3.4#4.06 
+  a_2 = 2.513#2.96 
   alpha_h = alpha_h_0 + ( 1.0 - d_eps_d_alfa )*( alpha - alpha_Cz_0 )
   cm_h = a_1*alpha_h + a_2*u_control[0]
 
-  cm_q = -10.14 #współczynnik tłumiący
+  cm_q = -20.14#-7.62 
   om_y_v = x[2] / V #predkosc kątowa pochylania
   
   dx_dt = declare_vector (n)
@@ -146,10 +146,10 @@ pntg, = ax.plot( [] , [] , 'ob' ,marker = i.plane_marker, markersize=40 )
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles, labels)
 
-c_lin = 1.0
-c_mass = 1.0
-c_vel = 1.0
-c_pow = 1.0
+c_lin = 17.44/19.185
+c_mass = 3018.0/2070.0
+c_vel = 255.0/250.0
+c_pow = 989.0/(2*220.0*0.7355)
 
 z0 = 120.0
 c_turb = 300.0
@@ -184,14 +184,16 @@ dt = 0.01
 t = 0.0
 
 R = np.eye(m, m)
+R[0,0] = 0.435
+R[1,1] = 0.004
 
 Q = np.eye(n,n)
-Q[0,0] = 1.0
-Q[1,1] = 1.0
-Q[2,2] = 1.0
-Q[3,3] = 0
-Q[4,4] = 0.3
-Q[5,5] = 0
+Q[0,0] = 0.865
+Q[1,1] = 1.555
+Q[2,2] = 0.235
+Q[3,3] = 0.000
+Q[4,4] = 0.245
+Q[5,5] = 0.000
 
 i = 0
 
@@ -245,7 +247,7 @@ for i in range (1, 3000):
   pntg.set_data( x[3] , -x[4] )
   
   x = fd_rk45( RHS , x , t , dt, u_control )
-  
+
   i += 1
   
   if i % 10 == 0: 
